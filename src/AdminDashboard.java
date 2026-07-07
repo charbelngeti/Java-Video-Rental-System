@@ -29,7 +29,10 @@ public class AdminDashboard extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
-
+    /**
+     * Establishes the remote connection to the central Video Library Server.
+     * Must target the exact IP address defined by the server host.
+     */
     private void connectToServer() {
         try {
             // Must point to the server's exact IP to avoid connection refused errors
@@ -41,7 +44,13 @@ public class AdminDashboard extends Application {
             e.printStackTrace();
         }
     }
-
+    /**
+     * Constructs the administrative interface for managing library genres.
+     * Provides text inputs to register new categories and buttons to alter their status.
+     * Synchronizes the registered genres list with the central database via RMI.
+     *
+     * @return A constructed Tab object containing the Genres GUI layout.
+     */
     private Tab createGenresTab() {
         Tab tab = new Tab("1. Genres");
         tab.setClosable(false);
@@ -72,7 +81,14 @@ public class AdminDashboard extends Application {
         tab.setContent(pane);
         return tab;
     }
-
+    /**
+     * Constructs the administrative interface for managing the movie inventory.
+     * Features dynamic cascading event listeners: selecting a specific genre
+     * automatically queries the server to filter and display only the movies
+     * associated with that ID.
+     *
+     * @return A constructed Tab object containing the Movies GUI layout.
+     */
     private Tab createMoviesTab() {
         Tab tab = new Tab("2. Movies");
         tab.setClosable(false);
@@ -107,7 +123,13 @@ public class AdminDashboard extends Application {
         tab.setContent(pane);
         return tab;
     }
-
+    /**
+     * Constructs the administrative interface for managing library patrons.
+     * Captures essential demographics (Name, Phone, Email) and commits them
+     * to the database. Refreshes the active customer registry upon successful saves.
+     *
+     * @return A constructed Tab object containing the Customers GUI layout.
+     */
     private Tab createCustomersTab() {
         Tab tab = new Tab("3. Customers");
         tab.setClosable(false);
