@@ -8,10 +8,22 @@ import java.rmi.registry.Registry;
  * space.
  */
 public class ServerApplication {
+
+  /**
+   * The entry point of the server application.
+   * <p>
+   * This method configures the networking hostname for the RMI server,
+   * instantiates the remote service implementation, boots up the local RMI
+   * registry
+   * on the default port, and binds the service stub to a lookup identifier.
+   * </p>
+   *
+   * @param args command-line arguments passed to the application (currently
+   *             unused)
+   */
   public static void main(String[] args) {
     try {
-      // CRITICAL: Update this to match your actual host machine's Wi-Fi / Ethernet IP
-      // address
+      // Set the codebase or server host IP address for stub distribution
       System.setProperty("java.rmi.server.hostname", "10.75.126.75");
 
       // Instantiating the service implementation

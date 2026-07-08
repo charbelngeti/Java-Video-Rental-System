@@ -8,24 +8,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * RMI Service Implementation executing JDBC operations against the SQLite VLS
+ * RMI Service Implementation executing JDBC operations against the MySQL VLS
  * database.
  * Includes automated schema creation checks at initialization.
  */
 public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRentalService {
 
+  /** JDBC URL targeting the local MySQL schema space. */
   private static final String DB_URL = "jdbc:mysql://localhost:3306/videorentalssystem";
+
+  /** Database access username credential. */
   private static final String DB_USER = "root";
+
+  /** Database access password credential. */
   private static final String DB_PASS = "Delliakavinya123";
 
+  /**
+   * Constructs a new VidRentalServiceImpl remote instance.
+   * Exports the object to the RMI runtime environments and triggers internal
+   * relational database validation/schema setup.
+   *
+   * @throws RemoteException if the remote object export process fails
+   */
   public VidRentalServiceImpl() throws RemoteException {
     super();
     initializeDatabase();
   }
 
   /**
-   * Runtime check: Verification and structural deployment of the SQLite schema
-   * file.
+   * Runtime check: Verification and structural deployment of the MySQL schema.
+   * Generates necessary application tables if they do not exist within the local
+   * target space.
    */
   private void initializeDatabase() {
     try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
@@ -82,6 +95,12 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
   }
 
   // --- GENRE OPERATIONS ---
+
+  /**
+   * {@inheritDoc}
+   * Executes an INSERT SQL query to persist a new genre row with default active
+   * state.
+   */
   @Override
   public boolean saveGenre(String name) throws RemoteException {
     String sql = "INSERT INTO Genres(genre, isactive) VALUES(?, 1)";
@@ -96,6 +115,11 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * Executes a soft-delete UPDATE statement to flag the specified genre as
+   * inactive.
+   */
   @Override
   public boolean removeGenre(String name) throws RemoteException {
     String sql = "UPDATE Genres SET isactive = 0 WHERE genre = ?";
@@ -110,6 +134,10 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * Collects all records from the Genres table where the active flag equals 1.
+   */
   @Override
   public List<String> getActiveGenres() throws RemoteException {
     List<String> genres = new ArrayList<>();
@@ -127,6 +155,12 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
   }
 
   // --- MOVIE OPERATIONS ---
+
+  /**
+   * {@inheritDoc}
+   * Inserts a new Movie row utilizing an internal sub-query lookup to obtain the
+   * matching genre ID.
+   */
   @Override
   public boolean saveMovie(String genreName, String title) throws RemoteException {
     String sql = "INSERT INTO Movies(genre_id, Title, isactive) SELECT id, ?, 1 FROM Genres WHERE genre = ?";
@@ -142,6 +176,11 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * Executes an inner join query across Movies and Genres to find active titles
+   * by name criteria.
+   */
   @Override
   public List<String> getMoviesByGenre(String genreName) throws RemoteException {
     List<String> movies = new ArrayList<>();
@@ -160,6 +199,10 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     return movies;
   }
 
+  /**
+   * {@inheritDoc}
+   * Soft-deletes a movie row by mutating the active flag field to 0.
+   */
   @Override
   public boolean removeMovie(String title) throws RemoteException {
     String sql = "UPDATE Movies SET isactive = 0 WHERE Title = ?";
@@ -175,6 +218,12 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
   }
 
   // --- CUSTOMER OPERATIONS ---
+
+  /**
+   * {@inheritDoc}
+   * Inserts customer attributes directly into the Clients database table data
+   * space.
+   */
   @Override
   public boolean saveCustomer(String name, String phone, String email) throws RemoteException {
     String sql = "INSERT INTO Clients(Fullname, phone, email, isactive) VALUES(?, ?, ?, 1)";
@@ -191,6 +240,10 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * Updates an existing Client profile to disable active status flag.
+   */
   @Override
   public boolean removeCustomer(String name) throws RemoteException {
     String sql = "UPDATE Clients SET isactive = 0 WHERE Fullname = ?";
@@ -205,6 +258,11 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * Selects all profile names from Clients table filter structured where state
+   * equals 1.
+   */
   @Override
   public List<String> getActiveCustomers() throws RemoteException {
     List<String> clients = new ArrayList<>();
@@ -222,6 +280,12 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
   }
 
   // --- TRANSACTIONAL RENTAL MANAGEMENT ---
+
+  /**
+   * {@inheritDoc}
+   * Maps client name and movie title strings into IDs using sub-queries to insert
+   * a transaction record.
+   */
   @Override
   public boolean saveRental(String customerName, String movieTitle) throws RemoteException {
     String sql = "INSERT INTO Rentals(client_id, movie_id, Returned) " +
@@ -238,6 +302,11 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * Matches IDs via nested sub-queries to close an unreturned (0) rental row with
+   * a returned status (1).
+   */
   @Override
   public boolean returnMovie(String customerName, String movieTitle) throws RemoteException {
     String sql = "UPDATE Rentals SET Returned = 1 WHERE client_id = (SELECT id FROM Clients WHERE Fullname = ?) " +
@@ -254,6 +323,11 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * Performs an explicit multi-table join operation to query active unreturned
+   * checkouts.
+   */
   @Override
   public List<String> getBorrowedMovies(String customerName) throws RemoteException {
     List<String> movies = new ArrayList<>();
@@ -273,6 +347,11 @@ public class VidRentalServiceImpl extends UnicastRemoteObject implements IVidRen
     return movies;
   }
 
+  /**
+   * {@inheritDoc}
+   * Multi-table join identifying historical rental rows where returned flag
+   * equals 1.
+   */
   @Override
   public List<String> getReturnedMovies(String customerName) throws RemoteException {
     List<String> movies = new ArrayList<>();
